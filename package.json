@@ -1,33 +1,55 @@
 {
-  "name": "dpl-t3",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@dienzt/shift-wisher",
+  "version": "3.0.0",
+  "private": false,
   "type": "module",
+  "description": "Vue 3 component for shift preference collection with calendar, undo/redo and scoring",
+  "keywords": ["vue3", "shift-planning", "calendar", "dienstplan"],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/shift-wisher.umd.cjs",
+  "module": "./dist/shift-wisher.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/shift-wisher.js",
+      "require": "./dist/shift-wisher.umd.cjs",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "sideEffects": false,
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
+    "build:lib": "vite build --config vite.lib.config.ts",
     "preview": "vite preview",
     "test:unit": "vitest",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "type-check": "vue-tsc --build",
+    "prepublishOnly": "npm run test:unit -- --run && npm run build:lib"
   },
-  "dependencies": {
-    "@vueuse/core": "^14.2.1",
-    "vue": "^3.5.31"
+  "peerDependencies": {
+    "vue": "^3.3.0"
   },
+  "dependencies": {},
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^28.0.1",
     "@types/node": "^24.12.0",
     "@vitejs/plugin-vue": "^6.0.5",
+    "@vueuse/core": "^14.2.1",
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.9.1",
     "jsdom": "^29.0.1",
     "npm-run-all2": "^8.0.4",
     "typescript": "~6.0.0",
     "vite": "^8.0.3",
+    "vite-plugin-dts": "^4.5.4",
     "vite-plugin-vue-devtools": "^8.1.1",
     "vitest": "^4.1.2",
+    "vue": "^3.5.31",
     "vue-tsc": "^3.2.6"
   },
   "engines": {

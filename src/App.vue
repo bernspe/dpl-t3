@@ -18,14 +18,18 @@ const exampleShifts = ref<SimpleShift[]>([
   {id:'SP', color: 'orange',name:'Spätschicht'},
   {id:'NS', color:'red',name:'Nachtschicht'}
 ])
+
+
 </script>
 
 <template>
   <div style="height: 100dvh; display: flex; flex-direction: column;">
     <ShiftWisher
         @update:wishes="onWishesUpdate"
+        @update:score="console.log"
         :shifts="exampleShifts"
         :holidays="holidays"
+        :points-base="25"
     :wish-request="{ from: '2025-05-01', to: '2025-06-30' }"
     />
   </div>

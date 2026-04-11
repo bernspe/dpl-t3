@@ -31,6 +31,8 @@
       <span v-if="holidays && holidays.length > 0" class="legend-item legend--holiday">◆ Feiertag</span>
     </div>
 
+    <WishScoreDisplay v-if="score" :score="score" />
+
     <!-- Scrollable calendar container -->
     <div ref="containerRef" class="sw-scroll">
       <div ref="topSentinel" class="sentinel" />
@@ -85,10 +87,13 @@ import CalendarView        from './CalendarView.vue'
 import ToastNotification   from './ToastNotification.vue'
 import WishModal           from './WishModal.vue'
 import NotePopover         from './NotePopover.vue'
+import WishScoreDisplay    from './WishScoreDisplay.vue'
 import { useWishStore }    from '../composables/useWishStore'
 import { useInfiniteScroll } from '../composables/useInfiniteScroll'
 import { useToast }        from '../composables/useToast'
 import { isoDate, formatDayRange } from '../composables/useDateHelpers'
+import { calcWishScore }           from '../composables/useWishPoints'
+import type { PointsRules, WishScore } from '../composables/useWishPoints'
 import type { SimpleShift, WishRow, WishType, WishRequest } from '../types/wish.types'
 
 const props = defineProps<{
@@ -97,21 +102,38 @@ const props = defineProps<{
   shifts?:      SimpleShift[]
   holidays?:    string[]
   wishRequest?: WishRequest
+  pointsBase?:  number       // 0-100; activates scoring when set together with wishRequest
+  pointsRules?: PointsRules  // optional custom point values
 }>()
 
-const title           = computed(() => props.title ?? 'Schichtwünsche')
+const emit = defineEmits<{
+  'update:wishes': [WishRow[]]
+  'update:score':  [WishScore | null]
+}>()
+
+const store = useWishStore()
+const { canUndo, canRedo, undo, redo, cycleWish, bulkSetWish, replaceShiftConstraint, clearShiftConstraints, setNote, getNote, getWishType, wishes } = store
+
+const title            = computed(() => props.title ?? 'Schichtwünsche')
 const wishRequestLabel = computed(() =>
   props.wishRequest
     ? formatDayRange([props.wishRequest.from, props.wishRequest.to])
     : null
 )
 
-const emit = defineEmits<{
-  'update:wishes': [WishRow[]]
-}>()
+const score = computed(() => {
+  if (props.pointsBase == null || !props.wishRequest) return null
+  return calcWishScore(
+    wishes.value as WishRow[],
+    props.wishRequest.from,
+    props.wishRequest.to,
+    new Set(props.holidays ?? []),
+    props.pointsBase,
+    props.pointsRules,
+  )
+})
 
-const store = useWishStore()
-const { canUndo, canRedo, undo, redo, cycleWish, bulkSetWish, replaceShiftConstraint, clearShiftConstraints, setNote, getNote, getWishType, wishes } = store
+watch(score, (val) => emit('update:score', val), { immediate: true })
 
 // ── Modal state ───────────────────────────────────────────────────────────────
 const showModal  = ref(false)
