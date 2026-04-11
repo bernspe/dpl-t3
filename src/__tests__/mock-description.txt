@@ -1,0 +1,31 @@
+⏺ Die Datei src/__tests__/mock-wishes-may2026.json wurde erstellt. Sie enthält:
+
+  ┌───────────────┬───────────────┬───────────────────────────────────────────────┐
+  │    Person     │ Stellenanteil │                    Profil                     │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ Anna Müller   │ 100%          │ Bevorzugt Frühschicht, Wochenenden frei       │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ Ben Schmidt   │ 100%          │ Wochenend-affin, Feiertage frei               │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ Clara Bauer   │ 50%           │ Halbtags, alterniert wochenweise              │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ David Koch    │ 100%          │ Spätschicht-Präferenz                         │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ Eva Wagner    │ 100%          │ Wochenend-bevorzugt, Brückentag-Notiz         │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ Felix Richter │ 100%          │ 10 Tage Urlaub (1.–10. Mai), danach aktiv     │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ Gabi Fischer  │ 80%           │ Gleichmäßige Mischung                         │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ Hans Meyer    │ 100%          │ Nachtschicht-Präferenz, Wochenenden bevorzugt │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ Iris Weber    │ 60%           │ Teilzeit, regelmäßige freie Blöcke            │
+  ├───────────────┼───────────────┼───────────────────────────────────────────────┤
+  │ Jonas Braun   │ 100%          │ Frühschicht-Präferenz, Wochenenden frei       │
+  └───────────────┴───────────────┴───────────────────────────────────────────────┘
+
+  Struktur:
+  - period — der Wunschzeitraum (passt direkt als wishRequest-Prop)
+  - holidays — Feiertage im Monat (1. Mai, Christi Himmelfahrt 21. Mai)
+  - shifts — die drei Dienste als SimpleShift[]
+  - persons[].wishes — direkt als WishRow[] in loadWishes() verwendbar
