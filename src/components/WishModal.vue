@@ -2,37 +2,37 @@
   <Teleport to="body">
     <div class="modal-overlay" data-testid="wish-modal" @click.self="$emit('cancel')">
       <div class="modal-card" role="dialog" aria-modal="true">
-        <p class="modal-title">{{ days.length }} Tag{{ days.length !== 1 ? 'e' : '' }} markiert</p>
+        <p class="modal-title">{{ $t('modal.daysMarked', days.length) }}</p>
         <p class="modal-daterange">{{ dateLabel }}</p>
-        <p class="modal-subtitle">Wunsch für diesen Zeitraum setzen:</p>
+        <p class="modal-subtitle">{{ $t('modal.setWish') }}</p>
 
         <div class="modal-actions">
           <button
             data-testid="modal-btn-preferred"
             class="modal-btn modal-btn--preferred"
             @click="emit('apply', 'preferred', note.trim() || undefined, selectedShift || undefined)"
-          >★ Bevorzugt</button>
+          >{{ $t('modal.preferred') }}</button>
 
           <button
             data-testid="modal-btn-unavailable"
             class="modal-btn modal-btn--unavailable"
             @click="emit('apply', 'unavailable', note.trim() || undefined, selectedShift || undefined)"
-          >✗ Nicht verfügbar</button>
+          >{{ $t('modal.unavailable') }}</button>
 
           <button
             data-testid="modal-btn-available"
             class="modal-btn modal-btn--available"
             @click="emit('apply', 'available', note.trim() || undefined, selectedShift || undefined)"
-          >□ Löschen</button>
+          >{{ $t('modal.clear') }}</button>
         </div>
 
         <!-- Shift selector -->
         <div v-if="shifts && shifts.length > 0" class="modal-shift-section">
-          <label class="modal-note-label">Dienst</label>
+          <label class="modal-note-label">{{ $t('modal.shift') }}</label>
           <div class="modal-shift-options">
             <label class="modal-shift-option">
               <input type="radio" value="" v-model="selectedShift" />
-              <span>Alle Dienste</span>
+              <span>{{ $t('modal.allShifts') }}</span>
             </label>
             <label v-for="shift in shifts" :key="shift.id" class="modal-shift-option">
               <input type="radio" :value="shift.id" v-model="selectedShift" />
@@ -42,14 +42,14 @@
         </div>
 
         <div class="modal-note-section">
-          <label class="modal-note-label" for="modal-note-input">Notiz <span class="optional">(optional)</span></label>
+          <label class="modal-note-label" for="modal-note-input">{{ $t('modal.note') }} <span class="optional">{{ $t('modal.optional') }}</span></label>
           <textarea
             id="modal-note-input"
             v-model="note"
             data-testid="modal-note"
             class="modal-note-area"
             rows="2"
-            placeholder="Gilt für alle markierten Tage…"
+            :placeholder="$t('modal.notePlaceholder')"
           />
         </div>
 
@@ -57,7 +57,7 @@
           data-testid="modal-btn-cancel"
           class="modal-cancel"
           @click="$emit('cancel')"
-        >Abbrechen</button>
+        >{{ $t('modal.cancel') }}</button>
       </div>
     </div>
   </Teleport>
@@ -65,11 +65,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { WishType, SimpleShift } from '../types/wish.types'
 import { formatDayRange } from '../composables/useDateHelpers'
+import { i18n } from '../i18n'
 
+const { t } = useI18n()
 const props = defineProps<{ days: string[]; shifts?: SimpleShift[] }>()
-const dateLabel = computed(() => formatDayRange(props.days))
+const dateLabel = computed(() => formatDayRange(props.days, i18n.global.locale.value))
 const emit = defineEmits<{
   apply:  [type: WishType | 'available', note?: string, shiftId?: string]
   cancel: []

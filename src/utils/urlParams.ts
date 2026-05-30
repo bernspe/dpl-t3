@@ -1,0 +1,80 @@
+import type { SimpleShift } from '../types/wish.types'
+
+export interface ContextParams {
+  planId:    string
+  personId:  string
+  month:     string
+  token:     string
+  name?:     string
+  deadline?: string
+  shifts?:   SimpleShift[]
+}
+
+export function parseContextParams(): ContextParams | null {
+  const p = new URLSearchParams(window.location.search)
+
+  const planId   = p.get('planId')   ?? ''
+  const personId = p.get('personId') ?? ''
+  const month    = p.get('month')    ?? ''
+  const token    = p.get('token')    ?? ''
+
+  if (!isUUID(planId) || !isUUID(personId) || !isYearMonth(month) || token === '') {
+    return null
+  }
+
+  let shifts: SimpleShift[] | undefined
+  const shiftsRaw = p.get('shifts')
+  if (shiftsRaw) {
+    try {
+      const base64 = shiftsRaw.replace(/-/g, '+').replace(/_/g, '/')
+      shifts = JSON.parse(atob(base64)) as SimpleShift[]
+    } catch {
+      // shifts bleibt undefined — nicht kritisch
+    }
+  }
+
+  return {
+    planId,
+    personId,
+    month,
+    token,
+    name:     p.get('name')     ?? undefined,
+    deadline: p.get('deadline') ?? undefined,
+    shifts,
+  }
+}
+
+export function isUUID(s: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
+}
+
+export function isYearMonth(s: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(s)
+}
+
+/** Gibt den letzten Tag eines Monats als YYYY-MM-DD zurück */
+export function lastDayOfMonth(month: string): string {
+  const [year, mon] = month.split('-').map(Number) as [number,number]
+  const last = new Date(year, mon, 0) // Tag 0 des Folgemonats = letzter Tag des aktuellen
+  return `${month}-${String(last.getDate()).padStart(2, '0')}`
+}
+
+export function encodeShifts(shifts: SimpleShift[]): string {
+  return btoa(JSON.stringify(shifts))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+}
+
+export function buildInviteLink(params: ContextParams): string {
+  const p = new URLSearchParams({
+    planId:   params.planId,
+    personId: params.personId,
+    month:    params.month,
+    token:    params.token,
+  })
+  if (params.name)     p.set('name',     params.name)
+  if (params.deadline) p.set('deadline', params.deadline)
+  if (params.shifts)   p.set('shifts',   encodeShifts(params.shifts))
+  return `${window.location.origin}/wishes?${p.toString()}`
+}

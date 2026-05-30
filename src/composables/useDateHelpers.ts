@@ -1,10 +1,13 @@
 import type { CalendarDay } from '../types/wish.types'
 
-export const WEEKDAY_LABELS = ['Mo','Di','Mi','Do','Fr','Sa','So'] as const
-export const MONTH_NAMES = [
-  'Januar','Februar','März','April','Mai','Juni',
-  'Juli','August','September','Oktober','November','Dezember',
-] as const
+// Monday-anchored weekday labels for a given locale (short form)
+// Uses a fixed Monday as anchor: 2024-01-01 is a Monday
+export function getWeekdayLabels(locale: string): string[] {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(2024, 0, 1 + i)
+    return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d)
+  })
+}
 
 export function isoDate(d: Date): string {
   const year  = d.getFullYear()
@@ -39,27 +42,37 @@ export function getMonthStart(base: Date, offsetMonths = 0): Date {
   return d
 }
 
-const WEEKDAY_LONG = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'] as const
-
-/** "Montag, 15. Januar 2024" */
-export function formatDay(iso: string): string {
-  const d   = new Date(iso + 'T00:00:00')
-  const dow = (d.getDay() || 7) - 1
-  return `${WEEKDAY_LONG[dow]}, ${d.getDate()}. ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`
+/** "Monday, 15 January 2024" / "Montag, 15. Januar 2024" */
+export function formatDay(iso: string, locale: string): string {
+  const d = new Date(iso + 'T00:00:00')
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  }).format(d)
 }
 
-/** "15.–17. Januar 2024" or "30. Januar – 2. Februar 2024" */
-export function formatDayRange(isoList: string[]): string {
+/** "15.–17. Januar 2024" / "Jan 15–17, 2024" */
+export function formatDayRange(isoList: string[], locale: string): string {
   if (isoList.length === 0) return ''
   const sorted = [...isoList].sort()
   const first  = new Date(sorted[0]!  + 'T00:00:00')
   const last   = new Date(sorted[sorted.length - 1]! + 'T00:00:00')
-  if (first.getTime() === last.getTime()) return formatDay(sorted[0]!)
+  if (first.getTime() === last.getTime()) return formatDay(sorted[0]!, locale)
+  // Use Intl.DateTimeFormat range if available, otherwise fallback
+  try {
+    const fmt = new (Intl as any).DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+    if (typeof fmt.formatRange === 'function') return fmt.formatRange(first, last)
+  } catch { /* fallback below */ }
+  const mo = new Intl.DateTimeFormat(locale, { month: 'long' })
   const sameMonth = first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()
   if (sameMonth) {
-    return `${first.getDate()}.–${last.getDate()}. ${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()}`
+    return `${first.getDate()}–${last.getDate()}. ${mo.format(first)} ${first.getFullYear()}`
   }
-  return `${first.getDate()}. ${MONTH_NAMES[first.getMonth()]} – ${last.getDate()}. ${MONTH_NAMES[last.getMonth()]} ${last.getFullYear()}`
+  return `${first.getDate()}. ${mo.format(first)} – ${last.getDate()}. ${mo.format(last)} ${last.getFullYear()}`
+}
+
+/** "Januar 2024" / "January 2024" */
+export function formatMonthLabel(d: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(d)
 }
 
 export function buildCalendarDays(monthStart: Date, todayIso: string): CalendarDay[] {

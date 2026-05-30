@@ -3,8 +3,7 @@ import {
   isoDate,
   buildCalendarDays,
   isoDow,
-  WEEKDAY_LABELS,
-  MONTH_NAMES,
+  getWeekdayLabels,
 } from '@/composables/useDateHelpers'
 
 describe('isoDate', () => {
@@ -106,12 +105,20 @@ describe('buildCalendarDays', () => {
   })
 })
 
-describe('constants', () => {
-  it('WEEKDAY_LABELS has 7 entries', () => {
-    expect(WEEKDAY_LABELS).toHaveLength(7)
+describe('getWeekdayLabels', () => {
+  it('returns 7 entries for de', () => {
+    expect(getWeekdayLabels('de')).toHaveLength(7)
   })
 
-  it('MONTH_NAMES has 12 entries', () => {
-    expect(MONTH_NAMES).toHaveLength(12)
+  it('returns 7 entries for en', () => {
+    expect(getWeekdayLabels('en')).toHaveLength(7)
+  })
+
+  it('starts on Monday for de', () => {
+    expect(getWeekdayLabels('de')[0]).toMatch(/Mo/i)
+  })
+
+  it('starts on Monday for en', () => {
+    expect(getWeekdayLabels('en')[0]).toMatch(/Mon/i)
   })
 })

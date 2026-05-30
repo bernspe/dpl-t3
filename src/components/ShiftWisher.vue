@@ -2,33 +2,48 @@
   <div class="shift-wisher">
     <!-- Toolbar -->
     <div class="sw-toolbar">
-      <span class="sw-title">{{ title }}</span>
-      <span v-if="wishRequestLabel" class="sw-request-range">📅 {{ wishRequestLabel }}</span>
+      <WishCraftLogo :icon-size="32" :show-wordmark="false" />
       <div class="sw-actions">
+        <div class="sw-lang-toggle">
+          <button :class="['sw-lang-btn', { active: locale === 'de' }]" @click="setLocale('de')">DE</button>
+          <button :class="['sw-lang-btn', { active: locale === 'en' }]" @click="setLocale('en')">EN</button>
+        </div>
         <button
           data-testid="btn-undo"
-          class="sw-btn"
+          class="sw-btn sw-btn--icon"
           :disabled="!canUndo"
-          title="Rückgängig (Ctrl+Z)"
+          :title="$t('toast.undone') + ' (Ctrl+Z)'"
           @click="doUndo"
-        >↩ Undo</button>
+        >↩</button>
         <button
           data-testid="btn-redo"
-          class="sw-btn"
+          class="sw-btn sw-btn--icon"
           :disabled="!canRedo"
-          title="Wiederholen (Ctrl+Shift+Z)"
+          :title="$t('toast.redone') + ' (Ctrl+Shift+Z)'"
           @click="doRedo"
-        >↪ Redo</button>
-        <button class="sw-btn" @click="goToToday">Heute</button>
+        >↪</button>
+        <slot name="toolbar-end" />
+      </div>
+    </div>
+
+    <!-- Context bar -->
+    <div class="sw-context-bar">
+      <div class="sw-context-left">
+        <span v-if="props.name" class="sw-name">👤 {{ props.name }}</span>
+        <button v-if="wishRequestLabel" class="sw-request-range" @click="scrollToDate(props.wishRequest!.from)">{{ wishRequestLabel }}</button>
+      </div>
+      <div class="sw-context-right">
+        <span v-if="props.deadline" class="sw-deadline">⏰ {{ $t('toolbar.deadline', { date: formatDeadline(props.deadline) }) }}</span>
+        <button class="sw-today-btn" @click="goToToday">{{ $t('toolbar.today') }}</button>
       </div>
     </div>
 
     <!-- Legend -->
     <div class="sw-legend">
-      <span class="legend-item legend--preferred">★ Bevorzugt</span>
-      <span class="legend-item legend--unavailable">✗ Nicht verfügbar</span>
-      <span class="legend-item">□ Verfügbar (Standard)</span>
-      <span v-if="holidays && holidays.length > 0" class="legend-item legend--holiday">◆ Feiertag</span>
+      <span class="legend-item legend--preferred">{{ $t('legend.preferred') }}</span>
+      <span class="legend-item legend--unavailable">{{ $t('legend.unavailable') }}</span>
+      <span class="legend-item">{{ $t('legend.available') }}</span>
+      <span v-if="holidays && holidays.length > 0" class="legend-item legend--holiday">{{ $t('legend.holiday') }}</span>
     </div>
 
     <WishScoreDisplay v-if="score" :score="score" />
@@ -43,7 +58,7 @@
         :data-month="isoDate(month)"
         class="sw-month-block"
       >
-        <div class="sw-month-header">{{ monthLabel(month) }}</div>
+        <div class="sw-month-header">{{ monthLabel(month, locale) }}</div>
         <CalendarView
           :month-start="month"
           :today-iso="todayIso"
@@ -83,21 +98,27 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { setLocale, i18n } from '../i18n'
 import CalendarView        from './CalendarView.vue'
 import ToastNotification   from './ToastNotification.vue'
 import WishModal           from './WishModal.vue'
 import NotePopover         from './NotePopover.vue'
 import WishScoreDisplay    from './WishScoreDisplay.vue'
+import WishCraftLogo       from './WishCraftLogo.vue'
 import { useWishStore }    from '../composables/useWishStore'
 import { useInfiniteScroll } from '../composables/useInfiniteScroll'
 import { useToast }        from '../composables/useToast'
-import { isoDate, formatDayRange } from '../composables/useDateHelpers'
+import { isoDate, formatDayRange, formatDay } from '../composables/useDateHelpers'
 import { calcWishScore }           from '../composables/useWishPoints'
 import type { PointsRules, WishScore } from '../composables/useWishPoints'
 import type { SimpleShift, WishRow, WishType, WishRequest } from '../types/wish.types'
 
 const props = defineProps<{
+  planId?:      string
   personId?:    string
+  name?:        string
+  deadline?:    string
   title?:       string
   shifts?:      SimpleShift[]
   holidays?:    string[]
@@ -111,15 +132,26 @@ const emit = defineEmits<{
   'update:score':  [WishScore | null]
 }>()
 
+const { t } = useI18n()
+const locale = i18n.global.locale
 const store = useWishStore()
 const { canUndo, canRedo, undo, redo, cycleWish, bulkSetWish, replaceShiftConstraint, clearShiftConstraints, setNote, getNote, getWishType, wishes } = store
 
-const title            = computed(() => props.title ?? 'Schichtwünsche')
-const wishRequestLabel = computed(() =>
-  props.wishRequest
-    ? formatDayRange([props.wishRequest.from, props.wishRequest.to])
+const title            = computed(() => props.title ?? '')
+
+function formatDeadline(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso + 'T00:00:00'))
+  } catch {
+    return iso
+  }
+}
+const wishRequestLabel = computed(() => {
+  void locale.value  // reactive dependency
+  return props.wishRequest
+    ? formatDayRange([props.wishRequest.from, props.wishRequest.to], locale.value)
     : null
-)
+})
 
 const score = computed(() => {
   if (props.pointsBase == null || !props.wishRequest) return null
@@ -183,12 +215,12 @@ function onModalCancel(): void {
 
 function doUndo(): void {
   undo()
-  toast.show('Rückgängig gemacht', 'undo')
+  toast.show(t('toast.undone'), 'undo')
 }
 
 function doRedo(): void {
   redo()
-  toast.show('Wiederholt', 'redo')
+  toast.show(t('toast.redone'), 'redo')
 }
 
 // Emit wishes whenever they change
@@ -206,7 +238,11 @@ function onKeyDown(e: KeyboardEvent): void {
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown)
-  if (props.wishRequest) scrollToDate(props.wishRequest.from)
+  if (props.wishRequest) {
+    scrollToDate(props.wishRequest.from)
+    const label = monthLabel(new Date(props.wishRequest.from + 'T00:00:00'))
+    toast.show(t('toast.enterWishes', { month: label }), 'info', 5000)
+  }
 })
 onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
 </script>
@@ -224,31 +260,112 @@ onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: 8px 12px;
   border-bottom: 1px solid #e5e7eb;
   background: #fff;
   flex-shrink: 0;
+  min-height: 48px;
 }
-.sw-title { font-weight: 700; font-size: 15px; }
+
+.sw-context-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.sw-context-left,
+.sw-context-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sw-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.sw-deadline {
+  font-size: 11px;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
 .sw-request-range {
   font-size: 12px;
   font-weight: 600;
-  color: #1d4ed8;
-  background: #eff6ff;
-  border: 1px solid #93c5fd;
-  border-radius: 999px;
-  padding: 2px 10px;
+  color: #13A8C4;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  font-family: inherit;
 }
-.sw-actions { display: flex; gap: 8px; }
+.sw-request-range:hover { color: #0B8AA3; }
+
+.sw-today-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #13A8C4;
+  background: none;
+  border: 1px solid #13A8C4;
+  border-radius: 6px;
+  padding: 2px 10px;
+  cursor: pointer;
+  transition: background .1s, color .1s;
+}
+.sw-today-btn:hover { background: #E4F6FA; }
+
+.sw-actions { display: flex; gap: 6px; align-items: center; }
+
+.sw-lang-toggle { display: flex; gap: 3px; }
+.sw-lang-btn {
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all .1s;
+  line-height: 1.4;
+}
+.sw-lang-btn.active { background: #13A8C4; border-color: #13A8C4; color: #fff; }
+.sw-lang-btn:hover:not(.active) { background: #E4F6FA; border-color: #13A8C4; color: #13A8C4; }
 
 .sw-btn {
-  padding: 5px 12px;
+  padding: 6px 10px;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   background: #f9fafb;
   font-size: 13px;
   cursor: pointer;
   transition: background .1s;
+  line-height: 1;
+}
+.sw-btn--icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
 }
 .sw-btn:hover:not(:disabled) { background: #f3f4f6; }
 .sw-btn:disabled { opacity: .4; cursor: default; }

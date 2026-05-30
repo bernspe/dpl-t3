@@ -11,8 +11,11 @@ node_modules
 .DS_Store
 dist
 dist-ssr
+api/vendor/
 coverage
 *.local
+.env
+.env.server
 
 # Editor directories and files
 .vscode/*
@@ -37,3 +40,4 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+/api/vendor/

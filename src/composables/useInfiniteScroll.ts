@@ -1,5 +1,6 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { getMonthStart, isoDate, MONTH_NAMES } from './useDateHelpers'
+import { getMonthStart, isoDate, formatMonthLabel } from './useDateHelpers'
+import { i18n } from '../i18n'
 
 const CHUNK = 1
 
@@ -22,8 +23,8 @@ export function useInfiniteScroll() {
     return months
   })
 
-  function monthLabel(d: Date): string {
-    return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`
+  function monthLabel(d: Date, _locale?: string): string {
+    return formatMonthLabel(d, _locale ?? i18n.global.locale.value)
   }
 
   let topObs:    IntersectionObserver | null = null

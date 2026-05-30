@@ -9,18 +9,18 @@
         class="np-card"
         :style="cardStyle"
         role="dialog"
-        aria-label="Notiz bearbeiten"
+        :aria-label="t('note.ariaLabel')"
       >
-        <p class="np-day">{{ formatDay(dayIso) }}</p>
-        <p class="np-label">Notiz</p>
+        <p class="np-day">{{ formatDay(dayIso, i18n.global.locale.value) }}</p>
+        <p class="np-label">{{ $t('note.title') }}</p>
 
         <!-- Shift selector -->
         <div v-if="shifts && shifts.length > 0" class="np-shift-section">
-          <p class="np-sublabel">Dienst</p>
+          <p class="np-sublabel">{{ $t('note.shift') }}</p>
           <div class="np-shift-options">
             <label class="np-shift-option">
               <input type="radio" value="" v-model="localShiftId" />
-              <span>Alle Dienste</span>
+              <span>{{ $t('note.allShifts') }}</span>
             </label>
             <label v-for="shift in shifts" :key="shift.id" class="np-shift-option">
               <input type="radio" :value="shift.id" v-model="localShiftId" />
@@ -35,7 +35,7 @@
           data-testid="note-textarea"
           class="np-textarea"
           rows="3"
-          placeholder="Optionale Notiz zu diesem Wunsch…"
+          :placeholder="t('note.placeholder')"
           @keydown.escape.prevent="$emit('close')"
         />
         <div class="np-actions">
@@ -43,11 +43,11 @@
             data-testid="note-save"
             class="np-btn np-btn--save"
             @click="onSave"
-          >Speichern</button>
+          >{{ $t('note.save') }}</button>
           <button
             class="np-btn np-btn--cancel"
             @click="$emit('close')"
-          >Abbrechen</button>
+          >{{ $t('note.cancel') }}</button>
         </div>
       </div>
     </div>
@@ -56,8 +56,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useWishStore } from '../composables/useWishStore'
 import { formatDay } from '../composables/useDateHelpers'
+import { i18n } from '../i18n'
 import type { SimpleShift } from '../types/wish.types'
 
 const props = defineProps<{
@@ -72,6 +74,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
 const { getNote, wishes } = useWishStore()
 
 // Pre-select an existing shift constraint for this day (if any)

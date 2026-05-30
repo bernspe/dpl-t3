@@ -1,0 +1,32 @@
+{
+    "v": 2,
+    "type": "wishes",
+    "planId": "12345678-1234-4234-a234-123456789abc",
+    "personId": "abcdef12-abcd-4bcd-abcd-abcdef123456",
+    "month": "2026-05",
+    "name": null,
+    "submittedAt": "2026-05-30T06:33:38+00:00",
+    "tokenHash": "5b11f9c06cb78da91993e95551e0ad229a1403ec7cff5207125e331bc88e5f6a",
+    "wishes": [
+        {
+            "date": "2026-05-08",
+            "preference": "preferred"
+        },
+        {
+            "date": "2026-05-09",
+            "preference": "preferred"
+        },
+        {
+            "date": "2026-05-11",
+            "preference": "preferred"
+        },
+        {
+            "date": "2026-05-12",
+            "preference": "unavailable"
+        },
+        {
+            "date": "2026-05-13",
+            "preference": "preferred"
+        }
+    ]
+}

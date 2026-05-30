@@ -2,7 +2,7 @@
   <div class="calendar-view">
     <!-- Weekday header -->
     <div class="cal-header">
-      <div v-for="label in WEEKDAY_LABELS" :key="label" class="cal-weekday">{{ label }}</div>
+      <div v-for="label in weekdayLabels" :key="label" class="cal-weekday">{{ label }}</div>
     </div>
 
     <!-- Day grid -->
@@ -89,7 +89,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { buildCalendarDays, WEEKDAY_LABELS } from '../composables/useDateHelpers'
+import { buildCalendarDays, getWeekdayLabels } from '../composables/useDateHelpers'
+import { i18n } from '../i18n'
 import { useWishStore } from '../composables/useWishStore'
 import { useDragSelect } from '../composables/useDragSelect'
 import type { SimpleShift, WishRequest, WishType } from '../types/wish.types'
@@ -127,7 +128,8 @@ function notePreview(dayIso: string): string {
   return n ? (n.length > 18 ? n.slice(0, 17) + '…' : n) : ''
 }
 
-const calendarDays  = computed(() => buildCalendarDays(props.monthStart, props.todayIso))
+const calendarDays   = computed(() => buildCalendarDays(props.monthStart, props.todayIso))
+const weekdayLabels  = computed(() => getWeekdayLabels(i18n.global.locale.value))
 const holidaySet    = computed(() => new Set(props.holidays ?? []))
 const inRequest     = (iso: string) =>
   !!props.wishRequest && iso >= props.wishRequest.from && iso <= props.wishRequest.to

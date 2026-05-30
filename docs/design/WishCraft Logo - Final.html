@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WishCraft — Logo Final</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1c1917;
+    --teal: #13A8C4;
+    --teal-dark: #0B8AA3;
+    --teal-soft: #E4F6FA;
+    --teal-light: #67CBDD;
+    --amber: #F5A623;
+    --gray: #6b7280;
+    --gray-light: #e5e7eb;
+    --mist: #f7fbfc;
+  }
+  body {
+    background: var(--mist);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    padding: 56px 32px 96px;
+  }
+  .sheet { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+  .card {
+    background: #fff;
+    border: 1px solid var(--gray-light);
+    border-radius: 18px;
+    padding: 40px;
+  }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--teal);
+  }
+  h1 { font-size: 38px; font-weight: 700; letter-spacing: -1px; margin-top: 6px; }
+  h1 .craft { font-weight: 400; opacity: 0.4; }
+  .sub { color: var(--gray); font-size: 16px; margin-top: 10px; line-height: 1.5; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .label { font-size: 12px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; color: var(--gray); margin-bottom: 18px; }
+  .tile {
+    border: 1px solid var(--gray-light); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 32px; min-height: 150px;
+  }
+  .tile.dark { background: #0f1b1f; border-color: #0f1b1f; }
+  .tile.soft { background: var(--teal-soft); border-color: transparent; }
+  .swatch-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .swatch { flex: 1; min-width: 120px; border-radius: 12px; overflow: hidden; border: 1px solid var(--gray-light); }
+  .swatch .chip { height: 64px; }
+  .swatch .meta { padding: 10px 12px; }
+  .swatch .name { font-size: 13px; font-weight: 600; }
+  .swatch .hex { font-size: 12px; color: var(--gray); font-family: ui-monospace, monospace; }
+  .home-grid { display: flex; gap: 28px; align-items: flex-end; flex-wrap: wrap; }
+  .home { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .home .nm { font-size: 13px; font-weight: 500; }
+  .tagline { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; }
+  .dl-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .dl {
+    appearance: none; border: none; cursor: pointer;
+    background: var(--teal); color: #fff;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    padding: 12px 20px; border-radius: 10px;
+    transition: background .15s, transform .1s;
+  }
+  .dl:hover { background: var(--teal-dark); }
+  .dl:active { transform: translateY(1px); }
+  .dl.ghost { background: transparent; color: var(--teal); border: 1.5px solid var(--teal); }
+  .dl.ghost:hover { background: var(--teal-soft); }
+  .note { font-size: 13px; color: var(--gray); margin-top: 14px; line-height: 1.5; }
+  .usage { display: flex; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--gray-light); }
+  .usage:first-child { border-top: none; }
+  .dot { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
+  .dot.yes { background: #e7f6ec; color: #1a8a4a; }
+  .dot.no { background: #fceaea; color: #c0392b; }
+  .usage span { font-size: 14.5px; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- Hero -->
+  <div class="card" style="display:flex; align-items:center; gap:36px; flex-wrap:wrap;">
+    <div id="hero-icon"></div>
+    <div>
+      <div class="eyebrow">Mitarbeiter-App · Dienstwünsche</div>
+      <h1>Wish<span class="craft">Craft</span></h1>
+      <div class="sub">Das Wunsch-Gegenstück zu ShiftCraft. Mitarbeitende geben hier ihre Dienstwünsche ab — der Plan entsteht in ShiftCraft.</div>
+    </div>
+  </div>
+
+  <!-- Tagline -->
+  <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;">
+    <div>
+      <div class="label" style="margin-bottom:8px;">Tagline</div>
+      <div class="tagline">Your shifts, your way.</div>
+    </div>
+    <div id="lockup"></div>
+  </div>
+
+  <!-- Logo auf Flächen -->
+  <div class="card">
+    <div class="label">Logo · Variante C — Türkis-Solid</div>
+    <div class="grid3">
+      <div class="tile" id="lk-light"></div>
+      <div class="tile soft" id="lk-soft"></div>
+      <div class="tile dark" id="lk-dark"></div>
+    </div>
+  </div>
+
+  <!-- App-Icon / Homescreen -->
+  <div class="card">
+    <div class="label">App-Icon · Homescreen</div>
+    <div class="home-grid">
+      <div class="home"><div id="hi-180"></div><div class="nm">WishCraft</div></div>
+      <div id="hi-120"></div>
+      <div id="hi-80"></div>
+      <div id="hi-app-dark" class="home" style="background:#0f1b1f; padding:20px; border-radius:18px;"><div></div><div class="nm" style="color:#fff;">WishCraft</div></div>
+    </div>
+    <div class="dl-row" style="margin-top:26px;">
+      <button class="dl" data-size="1024">App-Icon 1024px ↓</button>
+      <button class="dl" data-size="512">512px ↓</button>
+      <button class="dl" data-size="180">180px ↓</button>
+      <button class="dl ghost" id="dl-svg">SVG ↓</button>
+    </div>
+    <div class="note">PNGs werden im Browser gerendert (transparenter Hintergrund, gerundete Ecken). Für iOS/Android exportiere zusätzlich die randlose, eckige Vollfläche aus deinem Build-Tool.</div>
+  </div>
+
+  <!-- Farben -->
+  <div class="card">
+    <div class="label">Farben</div>
+    <div class="swatch-row">
+      <div class="swatch"><div class="chip" style="background:#13A8C4"></div><div class="meta"><div class="name">Teal · Primär</div><div class="hex">#13A8C4</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#0B8AA3"></div><div class="meta"><div class="name">Teal Dark</div><div class="hex">#0B8AA3</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#E4F6FA"></div><div class="meta"><div class="name">Teal Soft</div><div class="hex">#E4F6FA</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#F5A623"></div><div class="meta"><div class="name">Amber · Akzent</div><div class="hex">#F5A623</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#1c1917"></div><div class="meta"><div class="name">Ink</div><div class="hex">#1c1917</div></div></div>
+    </div>
+    <div class="note">Amber ist der gemeinsame Familien-Akzent mit ShiftCraft. Das Türkis ist das verwandte, leicht verschobene Blau zur Unterscheidung der Mitarbeiter-App.</div>
+  </div>
+
+  <!-- Do / Don't -->
+  <div class="grid2">
+    <div class="card">
+      <div class="label">Anwendung</div>
+      <div class="usage"><div class="dot yes">✓</div><span>Stern stets zentriert & freigestellt halten</span></div>
+      <div class="usage"><div class="dot yes">✓</div><span>„Wish" in Türkis, „Craft" gedämpft — wie ShiftCraft</span></div>
+      <div class="usage"><div class="dot yes">✓</div><span>Mindestens 12px Schutzraum um das Icon</span></div>
+    </div>
+    <div class="card">
+      <div class="label">Vermeiden</div>
+      <div class="usage"><div class="dot no">✕</div><span>Stern verzerren oder drehen</span></div>
+      <div class="usage"><div class="dot no">✕</div><span>Andere Farbtöne als das definierte Türkis</span></div>
+      <div class="usage"><div class="dot no">✕</div><span>„WishCraft" trennen oder umstellen</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── Icon-Generator (string SVG, wiederverwendbar für DOM + Export) ── */
+function starPath(cx, cy, r1, r2, n) {
+  n = n || 5; var d = "";
+  for (var i = 0; i < n * 2; i++) {
+    var a = (i * Math.PI) / n - Math.PI / 2;
+    var r = i % 2 === 0 ? r1 : r2;
+    d += (i === 0 ? "M" : "L") + (cx + Math.cos(a) * r).toFixed(2) + " " + (cy + Math.sin(a) * r).toFixed(2) + " ";
+  }
+  return d + "Z";
+}
+
+/* variant: 'solid' | 'light' | 'soft' ; rounded: include rx corner */
+function iconSVG(size, variant, rounded) {
+  var cfg = {
+    solid: { bg:"#13A8C4", bars:"rgba(255,255,255,0.22)", star:"#ffffff", ring:"rgba(255,255,255,0.14)", border:"none" },
+    light: { bg:"#ffffff", bars:"#dbeef3", star:"#13A8C4", ring:"#E4F6FA", border:"#e5e7eb" },
+    soft:  { bg:"#E4F6FA", bars:"#c4e7ee", star:"#13A8C4", ring:"#ffffff", border:"none" },
+  }[variant];
+  var rx = rounded ? 14 : 0;
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    + '<rect width="64" height="64" rx="'+rx+'" fill="'+cfg.bg+'"'
+      + (cfg.border!=="none" ? ' stroke="'+cfg.border+'" stroke-width="1.5"' : '') + '/>'
+    + '<rect x="11" y="12" width="42" height="8" rx="4" fill="'+cfg.bars+'"/>'
+    + '<rect x="11" y="44" width="42" height="8" rx="4" fill="'+cfg.bars+'"/>'
+    + '<circle cx="32" cy="32" r="13" fill="'+cfg.ring+'"/>'
+    + '<path d="'+starPath(32,32,11,4.6)+'" fill="'+cfg.star+'"/>'
+    + '</svg>';
+}
+
+function wordmark(opts) {
+  opts = opts || {};
+  var textColor = opts.textColor || "#1c1917";
+  var accent = opts.accent || "#13A8C4";
+  var tagColor = opts.tagColor || "#6b7280";
+  var tagline = opts.tagline || "Your shifts, your way.";
+  return '<svg width="210" height="48" viewBox="0 0 210 48" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    + '<text y="32" font-family="DM Sans, sans-serif" font-weight="700" font-size="30" fill="'+textColor+'" letter-spacing="-0.8">'
+    + '<tspan fill="'+accent+'">Wish</tspan><tspan font-weight="400" opacity="0.4">Craft</tspan></text>'
+    + '<text y="44" font-family="DM Sans, sans-serif" font-weight="400" font-size="9.5" fill="'+tagColor+'" opacity="0.5" letter-spacing="1.8">'+tagline+'</text>'
+    + '</svg>';
+}
+
+function homeIcon(size) {
+  return '<div style="width:'+size+'px;height:'+size+'px;border-radius:'+(size*0.225)+'px;overflow:hidden;box-shadow:0 6px 18px rgba(15,40,55,0.18)">'+iconSVG(size,'solid',true)+'</div>';
+}
+
+/* ── Mount ── */
+document.getElementById('hero-icon').innerHTML = homeIcon(104);
+document.getElementById('lockup').innerHTML = wordmark();
+document.getElementById('lk-light').innerHTML = '<div style="display:flex;align-items:center;gap:20px">'+iconSVG(60,'solid',true)+wordmark()+'</div>';
+document.getElementById('lk-soft').innerHTML = '<div style="display:flex;align-items:center;gap:20px">'+iconSVG(60,'solid',true)+wordmark()+'</div>';
+document.getElementById('lk-dark').innerHTML = '<div style="display:flex;align-items:center;gap:20px">'+iconSVG(60,'solid',true)+wordmark({textColor:'#fff',accent:'#67CBDD',tagColor:'#fff'})+'</div>';
+document.getElementById('hi-180').innerHTML = homeIcon(112);
+document.getElementById('hi-120').innerHTML = '<div class="home">'+homeIcon(84)+'<div class="nm">WishCraft</div></div>';
+document.getElementById('hi-80').innerHTML = '<div class="home">'+homeIcon(60)+'<div class="nm">WishCraft</div></div>';
+document.querySelector('#hi-app-dark div').innerHTML = homeIcon(84);
+
+/* ── Export ── */
+function download(name, url) {
+  var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+function svgToPng(svgStr, size, cb) {
+  var img = new Image();
+  var svg = new Blob([svgStr], {type:'image/svg+xml'});
+  var url = URL.createObjectURL(svg);
+  img.onload = function(){
+    var cv = document.createElement('canvas'); cv.width = size; cv.height = size;
+    var ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, size, size);
+    URL.revokeObjectURL(url);
+    cb(cv.toDataURL('image/png'));
+  };
+  img.src = url;
+}
+document.querySelectorAll('.dl[data-size]').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var s = parseInt(btn.getAttribute('data-size'), 10);
+    svgToPng(iconSVG(64,'solid',true), s, function(png){ download('WishCraft-icon-'+s+'.png', png); });
+  });
+});
+document.getElementById('dl-svg').addEventListener('click', function(){
+  var blob = new Blob([iconSVG(64,'solid',true)], {type:'image/svg+xml'});
+  download('WishCraft-icon.svg', URL.createObjectURL(blob));
+});
+</script>
+</body>
+</html>
