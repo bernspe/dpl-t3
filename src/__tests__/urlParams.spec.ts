@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   isUUID,
+  isSafeId,
   isYearMonth,
   lastDayOfMonth,
   parseContextParams,
@@ -28,6 +29,36 @@ describe('isUUID', () => {
     expect(isUUID('')).toBe(false)
     expect(isUUID('not-a-uuid')).toBe(false)
     expect(isUUID('12345678-1234-4234-a234-123456789ab')).toBe(false) // too short
+  })
+})
+
+// ── isSafeId ──────────────────────────────────────────────────────────────────
+
+describe('isSafeId', () => {
+  it('accepts UUID v4', () => {
+    expect(isSafeId('12345678-1234-4234-a234-123456789abc')).toBe(true)
+  })
+
+  it('accepts short non-UUID IDs', () => {
+    expect(isSafeId('p1')).toBe(true)
+    expect(isSafeId('p2')).toBe(true)
+    expect(isSafeId('anna')).toBe(true)
+    expect(isSafeId('my-plan-123')).toBe(true)
+    expect(isSafeId('plan_A')).toBe(true)
+  })
+
+  it('rejects path-traversal and dangerous characters', () => {
+    expect(isSafeId('../../etc/passwd')).toBe(false)
+    expect(isSafeId('../evil')).toBe(false)
+    expect(isSafeId('has.dot')).toBe(false)
+    expect(isSafeId('has space')).toBe(false)
+    expect(isSafeId('back\\slash')).toBe(false)
+    expect(isSafeId('')).toBe(false)
+  })
+
+  it('rejects IDs longer than 64 characters', () => {
+    expect(isSafeId('a'.repeat(65))).toBe(false)
+    expect(isSafeId('a'.repeat(64))).toBe(true)
   })
 })
 
@@ -131,9 +162,17 @@ describe('parseContextParams', () => {
     expect(parseContextParams()).toBeNull()
   })
 
-  it('returns null when planId is invalid UUID', () => {
-    setSearch({ planId: 'not-a-uuid', personId: VALID_PERSON_ID, month: VALID_MONTH, token: VALID_TOKEN })
+  it('returns null when planId contains unsafe characters', () => {
+    setSearch({ planId: 'has.dot', personId: VALID_PERSON_ID, month: VALID_MONTH, token: VALID_TOKEN })
     expect(parseContextParams()).toBeNull()
+  })
+
+  it('accepts short non-UUID planId and personId', () => {
+    setSearch({ planId: 'p1', personId: 'anna', month: VALID_MONTH, token: VALID_TOKEN })
+    const result = parseContextParams()
+    expect(result).not.toBeNull()
+    expect(result!.planId).toBe('p1')
+    expect(result!.personId).toBe('anna')
   })
 
   it('returns null when month is invalid', () => {

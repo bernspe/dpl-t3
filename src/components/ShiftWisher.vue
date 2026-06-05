@@ -69,6 +69,19 @@
           @multi-select="onMultiSelect"
           @edit-note="onEditNote"
         />
+        <!-- "Load wishes from other months" hint — shown once, below the target month -->
+        <div
+          v-if="showLoadOtherMonths && targetMonth && isoDate(month) === targetMonth"
+          class="sw-load-other-months"
+        >
+          <button class="sw-load-other-btn" @click="emit('load-other-months')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 .49-4.85"/>
+            </svg>
+            {{ $t('calendar.loadOtherMonths') }}
+          </button>
+        </div>
       </div>
 
       <div ref="bottomSentinel" class="sentinel" />
@@ -122,14 +135,17 @@ const props = defineProps<{
   title?:       string
   shifts?:      SimpleShift[]
   holidays?:    string[]
-  wishRequest?: WishRequest
-  pointsBase?:  number       // 0-100; activates scoring when set together with wishRequest
-  pointsRules?: PointsRules  // optional custom point values
+  wishRequest?:          WishRequest
+  showLoadOtherMonths?:  boolean   // show "load wishes from other months" hint below target month
+  pointsBase?:           number    // 0-100; activates scoring when set together with wishRequest
+  pointsRules?:          PointsRules  // optional custom point values
 }>()
 
 const emit = defineEmits<{
-  'update:wishes': [WishRow[]]
-  'update:score':  [WishScore | null]
+  'update:wishes':      [WishRow[]]
+  'update:score':       [WishScore | null]
+  'month-visible':      [month: string]
+  'load-other-months':  []
 }>()
 
 const { t } = useI18n()
@@ -146,6 +162,11 @@ function formatDeadline(iso: string): string {
     return iso
   }
 }
+/** YYYY-MM of the target/invite month, or null */
+const targetMonth = computed(() =>
+  props.wishRequest ? props.wishRequest.from.slice(0, 7) : null
+)
+
 const wishRequestLabel = computed(() => {
   void locale.value  // reactive dependency
   return props.wishRequest
@@ -176,6 +197,18 @@ const notePopover = ref<{ dayIso: string; shiftId?: string; note: string; anchor
 const { containerRef, topSentinel, bottomSentinel, visibleMonths, todayIso, monthLabel, goToToday, scrollToDate } =
   useInfiniteScroll()
 const toast = useToast()
+
+// Emit month-visible whenever a previously-unseen month scrolls into view
+const _seenMonths = new Set<string>()
+watch(visibleMonths, (months) => {
+  for (const d of months) {
+    const m = d.toISOString().slice(0, 7)
+    if (!_seenMonths.has(m)) {
+      _seenMonths.add(m)
+      emit('month-visible', m)
+    }
+  }
+}, { immediate: true })
 
 function onCycleWish(dayIso: string, shiftId?: string): void {
   cycleWish(dayIso, shiftId)
@@ -398,5 +431,29 @@ onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
   font-weight: 700;
   color: #374151;
   margin-bottom: 8px;
+}
+
+.sw-load-other-months {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+.sw-load-other-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  color: #13A8C4;
+  border: 1.5px solid #13A8C4;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.sw-load-other-btn:hover {
+  background: #13A8C4;
+  color: #fff;
 }
 </style>

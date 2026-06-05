@@ -22,13 +22,26 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $planId   = (string)($_GET['planId']   ?? '');
 $personId = (string)($_GET['personId'] ?? '');
 $token    = (string)($_GET['token']    ?? '');
+$month    = (string)($_GET['month']    ?? '');
 
 $handler = new WishHandler(dirname(__DIR__) . '/wishdata');
-$result  = $handler->load($planId, $personId, $token);
 
-http_response_code($result['status']);
-if ($result['ok']) {
-    echo json_encode($result['data'], JSON_UNESCAPED_UNICODE);
+if ($month !== '') {
+    // Single-month load (original behaviour)
+    $result = $handler->load($planId, $personId, $token);
+    http_response_code($result['status']);
+    if ($result['ok']) {
+        echo json_encode($result['data'], JSON_UNESCAPED_UNICODE);
+    } else {
+        echo json_encode(['ok' => false, 'error' => $result['error']]);
+    }
 } else {
-    echo json_encode(['ok' => false, 'error' => $result['error']]);
+    // All-months load — returns { ok: true, months: [...] }
+    $result = $handler->loadAll($planId, $personId, $token);
+    http_response_code($result['status']);
+    if ($result['ok']) {
+        echo json_encode(['ok' => true, 'months' => $result['months']], JSON_UNESCAPED_UNICODE);
+    } else {
+        echo json_encode(['ok' => false, 'error' => $result['error']]);
+    }
 }

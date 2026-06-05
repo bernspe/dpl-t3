@@ -1,6 +1,6 @@
 {
   "name": "@dienzt/shift-wisher",
-  "version": "3.1.1",
+  "version": "3.2.1",
   "private": false,
   "type": "module",
   "description": "Vue 3 component for shift preference collection with calendar, undo/redo and scoring",

@@ -1,8 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/TurnstileVerifier.php';
-require_once __DIR__ . '/WishHandler.php';
+require_once __DIR__ . '/ConfigHandler.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -41,18 +40,12 @@ if (!is_array($data)) {
     exit;
 }
 
-$handler = new WishHandler(dirname(__DIR__) . '/wishdata');
-
-// Batch-Modus wenn 'payloads' (Array) vorhanden, sonst Single-Modus (legacy)
-$result = isset($data['payloads']) ? $handler->saveBatch($data) : $handler->save($data);
+$handler = new ConfigHandler(dirname(__DIR__) . '/plandata');
+$result  = $handler->save($data);
 
 http_response_code($result['status']);
 if ($result['ok']) {
-    $response = ['ok' => true, 'savedAt' => $result['savedAt']];
-    if (isset($result['savedMonths'])) {
-        $response['savedMonths'] = $result['savedMonths'];
-    }
-    echo json_encode($response);
+    echo json_encode(['ok' => true, 'savedAt' => $result['savedAt']]);
 } else {
     echo json_encode(['ok' => false, 'error' => $result['error']]);
 }

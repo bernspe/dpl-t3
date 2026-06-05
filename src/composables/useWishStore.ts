@@ -177,6 +177,25 @@ export function useWishStore() {
     _paused = false
   }
 
+  /**
+   * Merge server-loaded wishes for a single month into the store.
+   * Existing wishes for that month (user may have already edited them) are kept;
+   * only days not yet present in the store receive new entries from the server.
+   */
+  function mergeWishesForMonth(rows: WishRow[], month: string): void {
+    _paused = true
+    for (const row of rows) {
+      if (!row.dayIso.startsWith(month)) continue
+      const exists = wishes.value.some(
+        r => r.dayIso === row.dayIso && r.shiftId === row.shiftId
+      )
+      if (!exists) {
+        wishes.value.push({ ...row, id: String(++_nextId) })
+      }
+    }
+    _paused = false
+  }
+
   /** Clear all wishes AND history — for reset / testing */
   function clearAll(): void {
     _paused = true
@@ -200,6 +219,7 @@ export function useWishStore() {
     clearShiftConstraints,
     replaceShiftConstraint,
     loadWishes,
+    mergeWishesForMonth,
     clearAll,
     undo,
     redo,

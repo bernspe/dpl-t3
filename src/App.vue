@@ -9,16 +9,18 @@ import type { SimpleShift, WishRow, WishRequest, WishType } from './types/wish.t
 import { useWishStore } from './composables/useWishStore'
 import { getGermanFederalHolidays } from './composables/useHolidays'
 import { useToast } from './composables/useToast'
-import { parseContextParams, isUUID, isYearMonth, lastDayOfMonth } from './utils/urlParams'
+import { parseContextParams, isSafeId, isYearMonth, lastDayOfMonth } from './utils/urlParams'
 import { cacheToken, getCachedToken } from './utils/token'
 import type { ContextParams } from './utils/urlParams'
+import { fetchPlanConfig } from './composables/useWishConfig'
+import type { PlanConfig } from './composables/useWishConfig'
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string
 
 const { t } = useI18n()
-const locale = i18n.global.locale
+const locale = i18n.global.locale  // reaktiv, für Datumsformatierung im Toast
 const toast = useToast()
-const { loadWishes: loadWishesIntoStore } = useWishStore()
+const { loadWishes: loadWishesIntoStore, mergeWishesForMonth } = useWishStore()
 
 const holidays = [
   ...getGermanFederalHolidays(2027),
@@ -29,6 +31,9 @@ const holidays = [
 
 const ctx = ref<ContextParams | null>(null)
 const contextReady = computed(() => ctx.value !== null)
+
+// Server-pushed plan config (shift types + holidays); null = not yet fetched or unavailable
+const serverConfig = ref<PlanConfig | null>(null)
 
 // ── Fallback form ─────────────────────────────────────────────────────────────
 
@@ -41,8 +46,8 @@ const formErrors = ref<{ planId?: string; personId?: string; token?: string; mon
 
 function validateForm(): boolean {
   const errors: typeof formErrors.value = {}
-  if (!isUUID(formPlanId.value))     errors.planId   = t('setup.errUuid')
-  if (!isUUID(formPersonId.value))   errors.personId = t('setup.errUuidShort')
+  if (!isSafeId(formPlanId.value))   errors.planId   = t('setup.errId')
+  if (!isSafeId(formPersonId.value)) errors.personId = t('setup.errId')
   if (formToken.value.trim() === '') errors.token    = t('setup.errToken')
   if (!isYearMonth(formMonth.value)) errors.month    = t('setup.errMonth')
   formErrors.value = errors
@@ -64,8 +69,13 @@ function confirmForm(): void {
 function applyContext(params: ContextParams): void {
   cacheToken(params.personId, params.token)
   ctx.value = params
+  showLoadOtherMonths.value = true  // offer to load other months until explicitly done
   toast.show(t('toast.loading'), 'info')
-  loadWishes(params)
+  loadAllWishes(params)
+  // Fire-and-forget: fetch plan config in parallel (non-blocking)
+  fetchPlanConfig(params.planId)
+    .then(config => { if (config) serverConfig.value = config })
+    .catch(() => { /* silent — URL-param shifts serve as fallback */ })
 }
 
 // ── wishRequest computed from month ───────────────────────────────────────────
@@ -78,13 +88,30 @@ const wishRequest = computed<WishRequest | undefined>(() => {
   }
 })
 
-const shifts = computed<SimpleShift[]>(() => ctx.value?.shifts ?? [])
+// Prefer server-pushed config (richer, includes timeStart/timeEnd) over URL-param shifts
+const shifts = computed<SimpleShift[]>(() => {
+  if (serverConfig.value?.shiftTypes.length) {
+    return serverConfig.value.shiftTypes.map(st => ({
+      id: st.id, name: st.name, color: st.color,
+    }))
+  }
+  return ctx.value?.shifts ?? []
+})
+
+// Prefer server-pushed holidays; fall back to German federal holidays
+const activeHolidays = computed<string[]>(() =>
+  serverConfig.value?.holidays.length
+    ? serverConfig.value.holidays
+    : holidays
+)
 
 // ── Wishes state ──────────────────────────────────────────────────────────────
 
 const currentWishes = ref<WishRow[]>([])
 const isSaving  = ref(false)
 const isLoading = ref(false)
+// Show the "load other months" hint until the user explicitly loads them
+const showLoadOtherMonths = ref(false)
 
 function onWishesUpdate(wishes: WishRow[]): void {
   currentWishes.value = wishes
@@ -112,16 +139,32 @@ function resetTurnstile(): void {
 
 // ── API calls ─────────────────────────────────────────────────────────────────
 
-async function loadWishes(params: ContextParams): Promise<void> {
+/** Convert raw server DayWish array to WishRow[] */
+function parseRawWishes(raw: Array<{ date: string; preference: string; shiftTypeId?: string; note?: string }>): WishRow[] {
+  let id = 0
+  return raw
+    .filter(w => w.preference === 'preferred' || w.preference === 'unavailable')
+    .map(w => ({
+      id:      String(++id),
+      dayIso:  w.date,
+      shiftId: w.shiftTypeId,
+      type:    w.preference as WishType,
+      note:    w.note,
+    }))
+}
+
+/** Load all saved months at once (startup). */
+async function loadAllWishes(params: ContextParams): Promise<void> {
   isLoading.value = true
   try {
     const url = new URL('/api/load-wishes.php', window.location.origin)
     url.searchParams.set('planId',   params.planId)
     url.searchParams.set('personId', params.personId)
     url.searchParams.set('token',    params.token)
+    // No 'month' param → server returns all months
 
     const res = await fetch(url.toString())
-    if (res.status === 404) return // Noch keine Wünsche gespeichert — OK
+    if (res.status === 404) return // No wishes saved yet — OK
     if (res.status === 403) {
       toast.show(t('toast.tokenInvalid'), 'warning')
       return
@@ -129,26 +172,54 @@ async function loadWishes(params: ContextParams): Promise<void> {
     if (!res.ok) return
 
     const data = await res.json()
-    const rawWishes: Array<{ date: string; preference: string; shiftTypeId?: string; note?: string }> =
-      data.wishes ?? []
+    const monthRecords: Array<{ wishes?: Array<{ date: string; preference: string; shiftTypeId?: string; note?: string }> }> =
+      data.months ?? []
 
-    let id = 0
-    const rows: WishRow[] = rawWishes
-      .filter(w => w.preference === 'preferred' || w.preference === 'unavailable')
-      .map(w => ({
-        id:      String(++id),
-        dayIso:  w.date,
-        shiftId: w.shiftTypeId,
-        type:    w.preference as WishType,
-        note:    w.note,
-      }))
+    const allRows: WishRow[] = monthRecords.flatMap(record => parseRawWishes(record.wishes ?? []))
 
-    loadWishesIntoStore(rows)
-    toast.show(t('toast.loaded', rows.length), 'success')
+    loadWishesIntoStore(allRows)
+    _loadedMonths.clear()  // reset so lazy-load tracking is fresh after a manual reload
+    showLoadOtherMonths.value = false  // all months loaded, hide the hint
+    if (allRows.length > 0) {
+      toast.show(t('toast.loaded', allRows.length), 'success')
+    }
   } catch {
-    // Netzwerkfehler — stillschweigend ignorieren (offline-Modus möglich)
+    // Network error — ignore silently (offline mode possible)
   } finally {
     isLoading.value = false
+  }
+}
+
+/** Track which months have already been fetched so we don't re-fetch. */
+const _loadedMonths = new Set<string>()
+
+/**
+ * Lazy-load a single month when it scrolls into view.
+ * Skips months already loaded or if context is not ready.
+ */
+async function onMonthVisible(month: string): Promise<void> {
+  if (!ctx.value) return
+  if (_loadedMonths.has(month)) return
+  _loadedMonths.add(month) // mark before fetch to prevent duplicate requests
+
+  try {
+    const url = new URL('/api/load-wishes.php', window.location.origin)
+    url.searchParams.set('planId',   ctx.value.planId)
+    url.searchParams.set('personId', ctx.value.personId)
+    url.searchParams.set('token',    ctx.value.token)
+    url.searchParams.set('month',    month)
+
+    const res = await fetch(url.toString())
+    if (!res.ok) return // 404 = no wishes for that month, 403 = already warned
+
+    const data = await res.json()
+    const rows = parseRawWishes(data.wishes ?? [])
+    if (rows.length > 0) {
+      mergeWishesForMonth(rows, month)
+    }
+  } catch {
+    // Silently ignore — lazy load is best-effort
+    _loadedMonths.delete(month) // allow retry on next scroll
   }
 }
 
@@ -162,31 +233,47 @@ async function saveWishes(): Promise<void> {
 
   isSaving.value = true
   try {
-    const payload = {
+    // Wünsche nach Monat (YYYY-MM) gruppieren
+    const byMonth = new Map<string, typeof currentWishes.value>()
+    for (const w of currentWishes.value) {
+      const month = w.dayIso.slice(0, 7)
+      if (!byMonth.has(month)) byMonth.set(month, [])
+      byMonth.get(month)!.push(w)
+    }
+
+    // Mindestens den Zielmonat senden, auch wenn er leer ist
+    if (!byMonth.has(ctx.value.month)) byMonth.set(ctx.value.month, [])
+
+    const payloads = [...byMonth.entries()].map(([month, wishes]) => ({
       v:           2,
       type:        'wishes',
-      planId:      ctx.value.planId,
-      personId:    ctx.value.personId,
-      month:       ctx.value.month,
-      name:        ctx.value.name,
+      planId:      ctx.value!.planId,
+      personId:    ctx.value!.personId,
+      month,
+      name:        ctx.value!.name,
       submittedAt: new Date().toISOString(),
-      wishes:      currentWishes.value.map(w => ({
+      wishes:      wishes.map(w => ({
         date:        w.dayIso,
         preference:  w.type === 'preferred' ? 'preferred' : 'unavailable',
         shiftTypeId: w.shiftId,
         note:        w.note,
       })),
-    }
+    }))
 
     const res = await fetch('/api/save-wishes.php', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ cfToken: cfToken.value, token: ctx.value.token, payload }),
+      body:    JSON.stringify({ cfToken: cfToken.value, token: ctx.value.token, payloads }),
     })
 
     const data = await res.json()
     if (data.ok) {
-      toast.show(t('toast.saved'), 'success')
+      const totalWishes = currentWishes.value.length
+      const months: string[] = data.savedMonths ?? [ctx.value.month]
+      const monthsLabel = months
+        .map(m => new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }).format(new Date(m + '-01')))
+        .join(', ')
+      toast.show(t('toast.saved', totalWishes) + ' — ' + monthsLabel, 'success')
       resetTurnstile()
     } else if (data.error === 'turnstile_failed') {
       toast.show(t('toast.turnstileFailed'), 'warning')
@@ -307,10 +394,13 @@ onMounted(() => {
         :name="ctx!.name"
         :deadline="ctx!.deadline"
         :shifts="shifts"
-        :holidays="holidays"
+        :holidays="activeHolidays"
         :wish-request="wishRequest"
+        :show-load-other-months="showLoadOtherMonths"
         @update:wishes="onWishesUpdate"
         @update:score="() => {}"
+        @month-visible="onMonthVisible"
+        @load-other-months="ctx && loadAllWishes(ctx)"
       >
         <template #toolbar-end>
           <button
@@ -488,4 +578,5 @@ body { margin: 0; background: #f9fafb; font-family: system-ui, sans-serif; }
 
 .sc-save-btn:hover:not(:disabled) { background: #0B8AA3; }
 .sc-save-btn:disabled { opacity: .45; cursor: default; }
+
 </style>
